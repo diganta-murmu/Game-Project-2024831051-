@@ -160,26 +160,35 @@ int main(int argc, char* argv[]) {
                 snake[0].x += velocityX;
                 snake[0].y += velocityY;
 
-                // // Screen Wrap-around
-                // if (snake[0].x < 0){
-                //     snake[0].x = SCREEN_WIDTH - GRID_SIZE;
-                // }else if(snake[0].x >= SCREEN_WIDTH){
-                //      snake[0].x = 0;
-                // } 
-                // if (snake[0].y < 0){
-                //     snake[0].y = SCREEN_HEIGHT - GRID_SIZE;
-                // }else if (snake[0].y >= SCREEN_HEIGHT){
-                //     snake[0].y = 0;
-                // }    
+                // // BORDER COLLISION CHECK
+                // for(size_t i =1; i < snake.size(); i++){
+                //     if (snake[0].x < 0 || snake[0].x >= SCREEN_WIDTH || snake[0].y < 0 || snake[0].y >= SCREEN_HEIGHT) {
+                //         currentState = GAME_OVER;
+                //         break;
+                //     }
+                // }
 
-                // BORDER COLLISION CHECK
-                for(size_t i =1; i < snake.size(); i++){
-                    if (snake[0].x < 0 || snake[0].x >= SCREEN_WIDTH || snake[0].y < 0 || snake[0].y >= SCREEN_HEIGHT) {
-                        currentState = GAME_OVER;
-                        break;
-                    }
-                }
-
+                
+                if (snake[0].x < 0){
+                    snake[0].x = SCREEN_WIDTH - GRID_SIZE;
+                    score--;
+                    snake.pop_back();
+                }else if(snake[0].x >= SCREEN_WIDTH){
+                     snake[0].x = 0;
+                     score--;
+                     snake.pop_back();
+                } 
+                if (snake[0].y < 0){
+                    snake[0].y = SCREEN_HEIGHT - GRID_SIZE;
+                    score--;
+                    snake.pop_back();
+                }else if (snake[0].y >= SCREEN_HEIGHT){
+                    snake[0].y = 0;
+                    score--;
+                    snake.pop_back();
+                } 
+                
+               
                 // Self-Collision Check
                 for (size_t i = 1; i < snake.size(); i++) {
                     if (snake[0].x == snake[i].x && snake[0].y == snake[i].y) {
@@ -199,6 +208,7 @@ int main(int argc, char* argv[]) {
                 for(size_t i = 0; i < foods.size(); i++){
                     if(snake[0].x == foods[i].x && snake[0].y == foods[i].y){
                         snake.push_back(oldTail);
+                        // snake.pop_back();
                         score += 1;
                         regularFoodCounter1 += 1; // Count regular foods eaten
                         // regularFoodCounter2 += 1;
@@ -236,11 +246,19 @@ int main(int argc, char* argv[]) {
                         foods[i].x = (rand() % columns) * GRID_SIZE;
                         foods[i].y = (rand() % rows) * GRID_SIZE;
                         break; 
+                    }else if(score < 0){
+                        score = 0; 
+                        currentState = GAME_OVER; 
+                        break;
                     }
                 }
 
                 // --- SPECIAL GREEN FOOD COLLISION ---
                 if (isSpecialFoodActive && snake[0].x == specialFood.x && snake[0].y == specialFood.y) {
+                    snake.push_back(oldTail);
+                    snake.push_back(oldTail);
+                    snake.push_back(oldTail);
+                    snake.push_back(oldTail);
                     snake.push_back(oldTail);
                     score += 5;                 // Big score boost!
                     isSpecialFoodActive = false; // Remove it from the board
