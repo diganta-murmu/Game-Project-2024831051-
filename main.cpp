@@ -36,6 +36,14 @@ void SpawnallFood(){
     }
 }
 
+Point specialFood;
+bool isSpecialFoodActive = false;
+int regularFoodCounter1 = 0;
+
+// Point poisonFood;
+// bool ispoisonFoodActivet = false;
+// int regularFoodCounter2 = 0;
+
 // void SpawnFood() {
 //     int columns = SCREEN_WIDTH / GRID_SIZE;
 //     int rows = SCREEN_HEIGHT / GRID_SIZE;
@@ -43,19 +51,26 @@ void SpawnallFood(){
 //     foodY = (rand() % rows) * GRID_SIZE;
 // }
 
-void ResetGame(vector<Point>& snake, int& velocityX, int& velocityY, int& score) {
+void ResetGame(vector<Point>& snake, int& velocityX, int& velocityY, int& score, Uint32 moveDelay) {
     snake.clear();
     int startX = SCREEN_WIDTH / 2;
     int startY = SCREEN_HEIGHT / 2;
+
+    int initialLength = 3;
+    for (int i = 0; i < initialLength; i++) {
+        // Each segment is placed one GRID_SIZE backward on the X-axis
+        snake.push_back({startX - (i * GRID_SIZE), startY});
+    }
     
-    snake.push_back({startX, startY});           
-    snake.push_back({startX - GRID_SIZE, startY});      
-    snake.push_back({startX - GRID_SIZE * 2, startY});      
+    // snake.push_back({startX, startY});           
+    // snake.push_back({startX - GRID_SIZE, startY});      
+    // snake.push_back({startX - GRID_SIZE * 2, startY});      
 
     velocityX = GRID_SIZE;
     velocityY = 0;
     score = 0;
     SpawnallFood();
+    moveDelay = 200;
     currentState = PLAYING; 
 }
 
@@ -98,13 +113,15 @@ int main(int argc, char* argv[]) {
     int velocityX, velocityY, score;
     vector<Point> snake;
 
-    ResetGame(snake, velocityX, velocityY, score);
-
+    
     bool isRunning = true;
     SDL_Event event;
-
+    
     Uint32 lastMoveTime = SDL_GetTicks();
-    const Uint32 moveDelay = 70; 
+    Uint32 initialmoveDelay = 200; 
+    Uint32 moveDelay = initialmoveDelay;
+    
+    ResetGame(snake, velocityX, velocityY, score, moveDelay);
 
     while (isRunning) {
         // 1. INPUT PROCESSING
@@ -123,7 +140,7 @@ int main(int argc, char* argv[]) {
                 } 
                 else if (currentState == GAME_OVER) {
                     if (event.key.keysym.sym == SDLK_SPACE || event.key.keysym.sym == SDLK_RETURN) {
-                        ResetGame(snake, velocityX, velocityY, score);
+                        ResetGame(snake, velocityX, velocityY, score, moveDelay);
                     }
                 }
             }
@@ -143,17 +160,17 @@ int main(int argc, char* argv[]) {
                 snake[0].x += velocityX;
                 snake[0].y += velocityY;
 
-                // Screen Wrap-around
-                if (snake[0].x < 0){
-                    snake[0].x = SCREEN_WIDTH - GRID_SIZE;
-                }else if(snake[0].x >= SCREEN_WIDTH){
-                     snake[0].x = 0;
-                } 
-                if (snake[0].y < 0){
-                    snake[0].y = SCREEN_HEIGHT - GRID_SIZE;
-                }else if (snake[0].y >= SCREEN_HEIGHT){
-                    snake[0].y = 0;
-                }    
+                // // Screen Wrap-around
+                // if (snake[0].x < 0){
+                //     snake[0].x = SCREEN_WIDTH - GRID_SIZE;
+                // }else if(snake[0].x >= SCREEN_WIDTH){
+                //      snake[0].x = 0;
+                // } 
+                // if (snake[0].y < 0){
+                //     snake[0].y = SCREEN_HEIGHT - GRID_SIZE;
+                // }else if (snake[0].y >= SCREEN_HEIGHT){
+                //     snake[0].y = 0;
+                // }    
 
                 // BORDER COLLISION CHECK
                 for(size_t i =1; i < snake.size(); i++){
@@ -178,20 +195,64 @@ int main(int argc, char* argv[]) {
                 //     score += 1; 
                 // }
 
-                //FOOD COLLISION FOR MULTIPLE FOODS
-                for(size_t i=0; i<foods.size(); i++){
+                // --- FOOD COLLISION FOR MULTIPLE FOODS ---
+                for(size_t i = 0; i < foods.size(); i++){
                     if(snake[0].x == foods[i].x && snake[0].y == foods[i].y){
                         snake.push_back(oldTail);
-                        //SpawnallFood();
                         score += 1;
+                        regularFoodCounter1 += 1; // Count regular foods eaten
+                        // regularFoodCounter2 += 1;
 
+                        int speedMilestons = score/1;
+                        moveDelay = initialmoveDelay - (speedMilestons * 5);
+
+                        if(moveDelay < 25){
+                            moveDelay = 20;
+                        }
+
+                        // If 5 regular foods are eaten, spawn the special green food
+                        if (regularFoodCounter1 >= 5 && !isSpecialFoodActive) {
+                            int columns = SCREEN_WIDTH / GRID_SIZE;
+                            int rows = SCREEN_HEIGHT / GRID_SIZE;
+                            specialFood.x = (rand() % columns) * GRID_SIZE;
+                            specialFood.y = (rand() % rows) * GRID_SIZE;
+                            isSpecialFoodActive = true;
+                            regularFoodCounter1 = 0; // Reset counter
+                        }
+
+                        // //for poison food
+                        // if(regularFoodCounter2 >=7 && !ispoisonFoodActivet){
+                        //     int columns = SCREEN_WIDTH / GRID_SIZE;
+                        //     int rows = SCREEN_HEIGHT / GRID_SIZE;
+                        //     poisonFood.x = (rand() % columns) * GRID_SIZE;
+                        //     poisonFood.y = (rand() % rows) * GRID_SIZE;
+                        //     ispoisonFoodActivet = true;
+                        //     regularFoodCounter2 = 0; // Reset counter
+                        // }
+
+                        // Respawn the eaten regular food
                         int columns = SCREEN_WIDTH / GRID_SIZE;
                         int rows = SCREEN_HEIGHT / GRID_SIZE;
-
                         foods[i].x = (rand() % columns) * GRID_SIZE;
                         foods[i].y = (rand() % rows) * GRID_SIZE;
+                        break; 
                     }
                 }
+
+                // --- SPECIAL GREEN FOOD COLLISION ---
+                if (isSpecialFoodActive && snake[0].x == specialFood.x && snake[0].y == specialFood.y) {
+                    snake.push_back(oldTail);
+                    score += 5;                 // Big score boost!
+                    isSpecialFoodActive = false; // Remove it from the board
+                }
+
+                //  // --- POISON FOOD RED COLLISION ---
+                // if (ispoisonFoodActivet && snake[0].x == poisonFood.x && snake[0].y == poisonFood.y) {
+                //     snake.push_back(oldTail);
+                //     score -= 5;                
+                //     ispoisonFoodActivet = false; 
+                // }
+
 
                 lastMoveTime = currentTime;
             }
@@ -212,6 +273,18 @@ int main(int argc, char* argv[]) {
                 SDL_Rect foodRect = { item.x, item.y, GRID_SIZE, GRID_SIZE };
                 SDL_RenderFillRect(renderer, &foodRect);
             }
+            // --- DRAW SPECIAL GREEN FOOD ---
+            if (isSpecialFoodActive) {
+                SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Pure Green
+                SDL_Rect specialRect = { specialFood.x, specialFood.y, GRID_SIZE, GRID_SIZE };
+                SDL_RenderFillRect(renderer, &specialRect);
+            }
+            // // --- DRAW POISON RED FOOD ---
+            // if (ispoisonFoodActivet) {
+            //     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Pure Green
+            //     SDL_Rect poisonRect = { poisonFood.x, poisonFood.y, GRID_SIZE, GRID_SIZE };
+            //     SDL_RenderFillRect(renderer, &poisonRect);
+            // }
 
             // Draw Snake
             for (size_t i = 0; i < snake.size(); i++) {
