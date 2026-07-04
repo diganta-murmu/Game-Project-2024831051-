@@ -51,7 +51,7 @@ int regularFoodCounter1 = 0;
 //     foodY = (rand() % rows) * GRID_SIZE;
 // }
 
-void ResetGame(vector<Point>& snake, int& velocityX, int& velocityY, int& score, Uint32 moveDelay) {
+void ResetGame(vector<Point>& snake, int& velocityX, int& velocityY, int& score, Uint32& moveDelay) {
     snake.clear();
     int startX = SCREEN_WIDTH / 2;
     int startY = SCREEN_HEIGHT / 2;
@@ -71,7 +71,8 @@ void ResetGame(vector<Point>& snake, int& velocityX, int& velocityY, int& score,
     score = 0;
     SpawnallFood();
     moveDelay = 200;
-    currentState = PLAYING; 
+    currentState = PLAYING;
+    regularFoodCounter1 = 0; 
 }
 
 void RenderTextHelper(SDL_Renderer* renderer, TTF_Font* font, const string& text, int x, int y, SDL_Color color, bool center) {
@@ -187,8 +188,12 @@ int main(int argc, char* argv[]) {
                     score--;
                     snake.pop_back();
                 } 
+
+                if(score < 0){
+                    score = 0; 
+                    currentState = GAME_OVER; 
+                }
                 
-               
                 // Self-Collision Check
                 for (size_t i = 1; i < snake.size(); i++) {
                     if (snake[0].x == snake[i].x && snake[0].y == snake[i].y) {
@@ -246,10 +251,6 @@ int main(int argc, char* argv[]) {
                         foods[i].x = (rand() % columns) * GRID_SIZE;
                         foods[i].y = (rand() % rows) * GRID_SIZE;
                         break; 
-                    }else if(score < 0){
-                        score = 0; 
-                        currentState = GAME_OVER; 
-                        break;
                     }
                 }
 
@@ -333,6 +334,7 @@ int main(int argc, char* argv[]) {
             
             // 3. Restart Prompts -> Uses mainFont (Size 26)
             RenderTextHelper(renderer, mainFont, "Press SPACE or ENTER to Restart", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 80, white, true);
+
         }
 
         SDL_RenderPresent(renderer);
